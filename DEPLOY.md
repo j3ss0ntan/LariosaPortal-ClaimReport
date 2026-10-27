@@ -7,6 +7,29 @@ behind **nginx** (public-facing reverse proxy on port 80/443), run as a
 Assumes a Debian/Ubuntu VPC with `sudo` access. Adjust paths/package manager
 for other distros.
 
+## Current live deployment
+
+Running on `vps3745298` (`162.35.32.77`), Ubuntu 26.04, at
+`http://162.35.32.77/lariosa/eclaims-report/`:
+
+- Code: `/root/lariosa/eclaims-report` (this box already runs other services
+  as root, so this deployment matches that convention — `User=root` in
+  `eclaims.service` — rather than the dedicated-user template below)
+- `systemctl status eclaims` / `journalctl -u eclaims -f` for service status/logs
+- nginx site: `/etc/nginx/sites-available/eclaims-report` (the stock
+  `default` site was removed from `sites-enabled` — it was catching
+  requests whose Host header didn't match and serving its own 404s)
+- Static files (`/static/*`) are proxied through gunicorn rather than served
+  directly by nginx, since `/root` is `700` and loosening its permissions
+  for nginx's worker user wasn't worth it for a few small CSS/JS/SVG files
+- No HTTPS yet (no domain pointed at the IP) — see step 9 below once one exists
+- `ufw` is installed but inactive; nothing currently restricts inbound ports
+
+The steps below are the general-purpose guide (dedicated service user,
+`/opt` path) for deploying this app on a *different*/fresh box. For this one,
+see the summary above — the only parts that actually apply as-written are
+§1 (packages, already done), §8 (firewall, still open), and §9 (HTTPS).
+
 ## 1. Install system packages
 
 ```bash
