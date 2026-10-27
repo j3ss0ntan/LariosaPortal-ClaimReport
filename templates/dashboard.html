@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block body %}
+{% if can_edit %}
 <input type="checkbox" id="sidebar-toggle" class="sidebar-toggle-input" checked>
+{% endif %}
 <div class="app-shell">
+  {% if can_edit %}
   <aside class="sidebar">
     <div class="sidebar-resize-handle" title="Drag to resize"></div>
     <div class="sidebar-scroll">
@@ -12,7 +15,6 @@
       </label>
     </div>
 
-    {% if can_edit %}
     <details class="side-section" open>
       <summary>
         <svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"></path><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"></path></svg>
@@ -30,18 +32,46 @@
       </form>
       </div>
     </details>
-    {% else %}
-    <p class="muted">Viewer access: data source controls are limited to editors and administrators.</p>
-    {% endif %}
 
     {% if can_admin %}
-    <details class="side-section">
+    <details class="side-section" {% if get_flashed_messages(category_filter=['secret']) %}open{% endif %}>
       <summary>
         <svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         <span>User management</span>
         <svg class="side-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </summary>
       <div class="section-body">
+
+      {% with secret_messages = get_flashed_messages(with_categories=true, category_filter=['secret']) %}
+        {% if secret_messages %}
+          <div class="flash-stack">
+            {% for category, message in secret_messages %}
+              {% set parts = message.split('\x1f') %}
+              <div class="flash flash-success">
+                {% if parts[0] == 'CREATE' %}
+                  Created {{ parts[1] }} ({{ parts[2] }}). Temporary password:
+                  {% set temp_pw = parts[3] %}
+                {% else %}
+                  New temporary password for {{ parts[1] }}:
+                  {% set temp_pw = parts[2] %}
+                {% endif %}
+                <span class="pw-reveal" data-pw="{{ temp_pw }}">
+                  <code class="pw-text">{{ '•' * (temp_pw|length) }}</code>
+                  <button type="button" class="pw-eye-btn" aria-label="Show password" aria-pressed="false">
+                    <svg class="pw-eye-icon pw-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg class="pw-eye-icon pw-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  </button>
+                </span>
+                {% if parts[0] == 'CREATE' %}
+                  -- share this with them; they'll be required to change it on first login.
+                {% else %}
+                  -- they'll be required to change it on next login.
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
 
       <details class="inner-card" open>
         <summary>
@@ -186,13 +216,16 @@
     {% endif %}
     </div>
   </aside>
+  {% endif %}
 
   <main class="main">
     <div class="topbar">
       <div class="topbar-left">
+        {% if can_edit %}
         <label for="sidebar-toggle" class="menu-btn" aria-label="Toggle menu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </label>
+        {% endif %}
         <h1>Eurolink claims submission</h1>
       </div>
       <div class="topbar-user">
