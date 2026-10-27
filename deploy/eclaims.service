@@ -1,0 +1,25 @@
+[Unit]
+Description=Eurolink Claims Submission Dashboard (Gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=eclaims
+Group=eclaims
+WorkingDirectory=/opt/eclaims-report
+Environment="PATH=/opt/eclaims-report/.venv/bin"
+ExecStart=/opt/eclaims-report/.venv/bin/gunicorn -c gunicorn.conf.py app:app
+Restart=on-failure
+RestartSec=5
+
+# Basic hardening -- WorkingDirectory (holding eurolink.db and
+# .flask_secret_key) stays writable; everything else on the box doesn't need
+# to be.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/eclaims-report
+
+[Install]
+WantedBy=multi-user.target
