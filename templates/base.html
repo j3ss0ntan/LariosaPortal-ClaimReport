@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Eurolink Claims Submission{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% block head_scripts %}{% endblock %}
+</head>
+<body>
+  <div id="upload-progress-overlay" class="upload-progress-overlay visible indeterminate" role="status" aria-live="polite">
+    <div class="upload-progress-card">
+      <div class="upload-progress-ring-wrap">
+        <svg class="upload-progress-ring" viewBox="0 0 80 80">
+          <circle class="upload-progress-ring-bg" cx="40" cy="40" r="34"></circle>
+          <circle id="upload-progress-circle" class="upload-progress-ring-fg" cx="40" cy="40" r="34"></circle>
+        </svg>
+        <span id="upload-progress-percent" class="upload-progress-percent">0%</span>
+      </div>
+      <div id="upload-progress-label" class="upload-progress-label">Loading&hellip;</div>
+    </div>
+  </div>
+  <script>
+    window.addEventListener("load", function () {
+      var overlay = document.getElementById("upload-progress-overlay");
+      if (overlay) overlay.classList.remove("visible", "indeterminate");
+    });
+  </script>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-stack">
+        {% for category, message in messages %}
+          {% if category == 'secret' %}
+            {% set parts = message.split('\x1f') %}
+            <div class="flash flash-success">
+              {% if parts[0] == 'CREATE' %}
+                Created {{ parts[1] }} ({{ parts[2] }}). Temporary password:
+                {% set temp_pw = parts[3] %}
+              {% else %}
+                New temporary password for {{ parts[1] }}:
+                {% set temp_pw = parts[2] %}
+              {% endif %}
+              <span class="pw-reveal" data-pw="{{ temp_pw }}">
+                <code class="pw-text">{{ '•' * (temp_pw|length) }}</code>
+                <button type="button" class="pw-eye-btn" aria-label="Show password" aria-pressed="false">
+                  <svg class="pw-eye-icon pw-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="pw-eye-icon pw-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+              </span>
+              {% if parts[0] == 'CREATE' %}
+                -- share this with them; they'll be required to change it on first login.
+              {% else %}
+                -- they'll be required to change it on next login.
+              {% endif %}
+            </div>
+          {% else %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block body %}{% endblock %}
+  <script src="{{ url_for('static', filename='pw-reveal.js') }}"></script>
+  <script src="{{ url_for('static', filename='password-toggle.js') }}"></script>
+  <script src="{{ url_for('static', filename='upload-progress.js') }}"></script>
+</body>
+</html>

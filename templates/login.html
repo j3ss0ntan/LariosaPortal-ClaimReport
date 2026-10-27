@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="center-wrap">
+  <div class="center-card">
+    <img class="center-logo" src="{{ url_for('static', filename='logo.svg') }}" alt="Eurolink">
+    <h1>Eurolink claims submission</h1>
+    <p class="muted">Sign in to continue.</p>
+    {% if error %}<div class="flash flash-error">{{ error }}</div>{% endif %}
+    <form method="post" action="{{ url_for('.login') }}">
+      <label for="username">Username</label>
+      <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <button type="submit" class="btn btn-primary">Log in</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

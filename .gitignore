@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+users.json
+eurolink.db
+.flask_secret_key
+tests/_*.png

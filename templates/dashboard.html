@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% block body %}
+<input type="checkbox" id="sidebar-toggle" class="sidebar-toggle-input" checked>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-resize-handle" title="Drag to resize"></div>
+    <div class="sidebar-scroll">
+    <div class="sidebar-top">
+      <img class="sidebar-logo" src="{{ url_for('static', filename='logo.svg') }}" alt="Eurolink">
+      <label for="sidebar-toggle" class="menu-btn sidebar-close" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </label>
+    </div>
+
+    {% if can_edit %}
+    <details class="side-section" open>
+      <summary>
+        <svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"></path><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"></path></svg>
+        <span>Data source</span>
+        <svg class="side-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </summary>
+      <div class="section-body">
+      <form method="post" action="{{ url_for('.refresh') }}" class="inline-form">
+        <button type="submit" class="btn btn-secondary">Refresh now</button>
+      </form>
+      <form id="upload-form" method="post" action="{{ url_for('.upload') }}" enctype="multipart/form-data" class="inline-form">
+        <label for="file">Or load a file instead</label>
+        <input id="file" name="file" type="file" accept=".csv,.xlsx,.xls">
+        <button type="submit" class="btn btn-secondary">Upload</button>
+      </form>
+      </div>
+    </details>
+    {% else %}
+    <p class="muted">Viewer access: data source controls are limited to editors and administrators.</p>
+    {% endif %}
+
+    {% if can_admin %}
+    <details class="side-section">
+      <summary>
+        <svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        <span>User management</span>
+        <svg class="side-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </summary>
+      <div class="section-body">
+
+      <details class="inner-card" open>
+        <summary>
+          <span>Current users</span>
+          <span class="inner-count">{{ users|length }}</span>
+          <svg class="side-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </summary>
+        <div class="inner-card-body">
+        <div class="table-scroll">
+        <table class="mini-table">
+          <thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Must change pw</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for u, info in users.items()|sort %}
+            <tr>
+              <td>{{ u }}</td>
+              <td>{{ info.name }}</td>
+              <td>
+                <form method="post" action="{{ url_for('.admin_users') }}" class="inline-form">
+                  <input type="hidden" name="action" value="set_role">
+                  <input type="hidden" name="username" value="{{ u }}">
+                  <select name="role" class="role-select" onchange="this.form.submit()" aria-label="Role for {{ u }}">
+                    {% for r in valid_roles %}<option value="{{ r }}" {% if r == info.role %}selected{% endif %}>{{ r }}</option>{% endfor %}
+                  </select>
+                </form>
+              </td>
+              <td>{{ info.must_change_password }}</td>
+              <td>
+                <div class="row-actions">
+                  <form method="post" action="{{ url_for('.admin_users') }}" class="inline-form">
+                    <input type="hidden" name="action" value="reset_password">
+                    <input type="hidden" name="username" value="{{ u }}">
+                    <button type="submit" class="icon-btn" title="Reset password" aria-label="Reset password for {{ u }}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 11a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 13a9 9 0 0 1-15 6.7L3 16"/></svg>
+                    </button>
+                  </form>
+                  {% if u != default_admin %}
+                  <form method="post" action="{{ url_for('.admin_users') }}" class="inline-form">
+                    <input type="hidden" name="action" value="remove">
+                    <input type="hidden" name="username" value="{{ u }}">
+                    <button type="submit" class="icon-btn icon-btn-danger" title="Remove user" aria-label="Remove {{ u }}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+        </div>
+      </details>
+
+      <details class="inner-card">
+        <summary>
+          <span>Create a user</span>
+          <svg class="side-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </summary>
+        <div class="inner-card-body">
+        <form method="post" action="{{ url_for('.admin_users') }}">
+          <input type="hidden" name="action" value="create">
+          <input name="username" type="text" placeholder="Username" required>
+          <input name="name" type="text" placeholder="Display name">
+          <select name="role">
+            {% for r in valid_roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="btn btn-secondary">Create</button>
+        </form>
+        </div>
+      </details>
+
+      <details class="inner-card">
+        <summary>
+          <span>Password policy</span>
+          <svg class="side-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </summary>
+        <div class="inner-card-body">
+        <form method="post" action="{{ url_for('.admin_users') }}">
+          <input type="hidden" name="action" value="set_password_policy">
+          <label class="policy-check">
+            <input type="checkbox" name="require_min_length" {% if password_policy.require_min_length %}checked{% endif %}>
+            Minimum length
+            <input type="number" name="min_length" min="4" max="128" value="{{ password_policy.min_length }}" class="policy-length-input">
+          </label>
+          <label class="policy-check">
+            <input type="checkbox" name="require_lower" {% if password_policy.require_lower %}checked{% endif %}>
+            Includes lowercase letter
+          </label>
+          <label class="policy-check">
+            <input type="checkbox" name="require_upper" {% if password_policy.require_upper %}checked{% endif %}>
+            Includes uppercase letter
+          </label>
+          <label class="policy-check">
+            <input type="checkbox" name="require_digit" {% if password_policy.require_digit %}checked{% endif %}>
+            Includes numeric character
+          </label>
+          <label class="policy-check">
+            <input type="checkbox" name="require_special" {% if password_policy.require_special %}checked{% endif %}>
+            Includes special character
+          </label>
+          <button type="submit" class="btn btn-secondary">Save policy</button>
+        </form>
+        </div>
+      </details>
+
+      </div>
+    </details>
+
+    <details class="side-section">
+      <summary>
+        <svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>Audit log</span>
+        <svg class="side-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </summary>
+      <div class="section-body">
+      <form method="get" action="{{ url_for('.dashboard') }}" class="box-form">
+        <label for="audit_action">Filter by action</label>
+        <select id="audit_action" name="audit_action" onchange="this.form.submit()">
+          <option value="(all)" {% if audit_filter == "(all)" %}selected{% endif %}>(all)</option>
+          {% for a in audit_actions %}
+          <option value="{{ a }}" {% if audit_filter == a %}selected{% endif %}>{{ a }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% if audit_rows %}
+      <div class="audit-scroll">
+        <table class="mini-table">
+          <thead><tr><th>ts</th><th>actor</th><th>action</th><th>target</th></tr></thead>
+          <tbody>
+            {% for r in audit_rows %}
+            <tr><td>{{ r.ts }}</td><td>{{ r.actor or "" }}</td><td>{{ r.action }}</td><td>{{ r.target or "" }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="muted">No audit entries yet.</p>
+      {% endif %}
+      </div>
+    </details>
+    {% endif %}
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <label for="sidebar-toggle" class="menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </label>
+        <h1>Eurolink claims submission</h1>
+      </div>
+      <div class="topbar-user">
+        <span class="muted">Signed in as <strong>{{ name }}</strong> &middot; role: <strong>{{ role }}</strong></span>
+        <form method="post" action="{{ url_for('.logout') }}" class="inline-form">
+          <button type="submit" class="btn btn-secondary">Log out</button>
+        </form>
+      </div>
+    </div>
+    <p class="muted">
+      Inpatient (IP), outpatient (OPD) and hemodialysis (HEMO) claims. Delay is the number of days
+      from discharge to the date the claim was submitted. The filing window is 60 days.
+    </p>
+
+    {% if error %}
+    <div class="flash flash-error">{{ error }}</div>
+    {% else %}
+    <p class="muted">
+      {{ source_label }} &middot; {{ "{:,}".format(meta.claims) }} claims &middot; latest submission
+      {{ meta.latest.strftime("%b %d, %Y %I:%M %p") }} &middot; loaded {{ now }}
+    </p>
+
+    <div class="kpi-grid">
+      {% for k in kpis %}
+      <div class="kpi-card">
+        <strong>{{ k.label }}</strong>
+        <div class="kpi-value">{{ k.claims }}</div>
+        <ul class="kpi-list">
+          <li>Average delay (days): <strong>{{ k.avg_delay }}</strong></li>
+          <li>Submitted after day 60 (%): <strong>{{ k.late_pct }}</strong></li>
+          <li>Claims per day, last 90 days: <strong>{{ k.per_day_recent }}</strong></li>
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+
+    <hr>
+
+    <h2>Claims submitted per month: last 12 months vs the year before</h2>
+    <p class="muted">Count of claims by month of submission. Each panel has its own scale. The latest month is partial.</p>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    {{ chart_html.compare | safe }}
+
+    <div class="chart-grid">
+      <div>
+        <h2>Average claims submitted per day</h2>
+        <p class="muted">Monthly submissions divided by days in the month.</p>
+        <div class="lazy-chart"><div class="lazy-chart-skeleton"></div><template>{{ chart_html.per_day | safe }}</template></div>
+      </div>
+      <div>
+        <h2>Average submission delay</h2>
+        <p class="muted">Average days from discharge to submission, by month submitted. The dashed line is the 60-day filing window.</p>
+        <div class="lazy-chart"><div class="lazy-chart-skeleton"></div><template>{{ chart_html.avg_delay | safe }}</template></div>
+      </div>
+    </div>
+
+    <h2>Daily submissions, last 12 months</h2>
+    <p class="muted">Claims submitted on each day. Months with no recorded submissions are left blank.</p>
+    <div class="lazy-chart"><div class="lazy-chart-skeleton"></div><template>{{ chart_html.daily | safe }}</template></div>
+
+    <div class="chart-grid">
+      <div>
+        <h2>How long claims wait before submission</h2>
+        <p class="muted">Share of each type's submitted claims by days since discharge.</p>
+        <div class="lazy-chart"><div class="lazy-chart-skeleton"></div><template>{{ chart_html.buckets | safe }}</template></div>
+      </div>
+      <div>
+        <h2>Claim status by type</h2>
+        <p class="muted">Share of each type's claims in each processing status.</p>
+        <div class="lazy-chart"><div class="lazy-chart-skeleton"></div><template>{{ chart_html.status | safe }}</template></div>
+      </div>
+    </div>
+
+    <h2>Daily calendar: last 12 months</h2>
+    <p class="muted">IP, OPD and HEMO claims submitted on every day. Months with no recorded submissions are grouped.</p>
+    {% for m in calendar_months %}
+    <p><strong>{{ m.title }}</strong> &nbsp; IP <strong>{{ m.tot.IP }}</strong> &middot; OPD <strong>{{ m.tot.OPD }}</strong> &middot; HEMO <strong>{{ m.tot.HEMO }}</strong></p>
+    <div class="lazy-chart"><div class="lazy-chart-skeleton"></div><template>{{ m.chart_html | safe }}</template></div>
+    {% endfor %}
+    {% if inactive %}
+    <p class="muted">No submissions recorded: {{ inactive }}.</p>
+    {% endif %}
+
+    <p class="muted">
+      Figures are recalculated from the claims tab of the Google Sheet on every refresh. HEMO is any
+      claim with a hemodialysis procedure code (RVS 90935 or 90937). The rest are split into IP and
+      OPD by patient type. Unprocessed claims with no patient type are left out. Delay statistics use
+      claims that have a submission date; records with a negative delay or a delay over 180 days are
+      left out of the averages.
+    </p>
+    {% endif %}
+  </main>
+</div>
+<script src="{{ url_for('static', filename='sidebar-resize.js') }}"></script>
+<script src="{{ url_for('static', filename='lazy-charts.js') }}"></script>
+{% endblock %}
